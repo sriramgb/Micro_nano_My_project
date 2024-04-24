@@ -1,0 +1,396 @@
+from phidl import Device, geometry as pg
+from phidl import quickplot as qp
+
+def create_device_D(comb_width_factor):
+    # Original comb width
+    original_comb_width = 3
+    comb_width = original_comb_width * comb_width_factor
+    comb_height = 10
+
+    # Create a new device
+    D = Device()
+
+    # for MASK 1
+    # Define positions and sizes for rectangles
+    positions = [
+        (40, 200), (140, 150), (40, 151),
+        (254, 150), (0, 150), (100, 150),
+        (220, 150), (140, 30), (0, 130),
+        (0, 100), (200, 100), (40, 80),
+        (0, 51), (294, 50), (0, 50),
+        (200, 50), (40, 30), (45, 0),
+        (250, 0), (40, 0)
+    ]
+    sizes = [
+        (220, 8), (6, 50), (6, 50),
+        (6, 50), (80, 8), (100, 8),
+        (80, 8), (6, 100), (300, 8),
+        (100, 8), (100, 8), (220, 8),
+        (6, 50), (6, 50), (100, 8),
+        (100, 8), (220, 8), (6, 30),
+        (6, 30), (220, 8)
+    ]
+
+    # Create rectangles
+    for position, size in zip(positions, sizes):
+        D << pg.rectangle(size=size, layer=0).move(position)
+
+    # Define vertical comb parameters
+    size = (comb_width, comb_height)
+    y_offset = 140
+    x_offsets = [0, 15, 30, 46, 61, 77]
+    x_middle_offsets = [100, 119, 139, 159, 179, 197]
+    x_end_offsets = [220, 235, 251, 267, 283, 297]
+
+    # Create vertical lines for the first horizontal line
+    for x_offset in x_offsets:
+        vertical_line = D << pg.rectangle(size=size, layer=0)
+        vertical_line.move((x_offset, y_offset))
+
+    # Create vertical lines for the middle horizontal line
+    for x_offset in x_middle_offsets:
+        vertical_line = D << pg.rectangle(size=size, layer=0)
+        vertical_line.move((x_offset, y_offset))
+
+    # Create vertical lines for the last horizontal line
+    for x_offset in x_end_offsets:
+        vertical_line = D << pg.rectangle(size=size, layer=0)
+        vertical_line.move((x_offset, y_offset))
+
+    # Define parameters
+    size = (comb_width, comb_height)
+    y_offset = 138
+    x_offsets_1 = [8, 23, 39, 54, 69, 84]
+    x_offsets_2 = [110, 129, 149, 169, 188, 205]
+    x_offsets_3 = [228, 243, 259, 275, 290]
+
+    # Create vertical lines for the first set
+    for x_offset in x_offsets_1:
+        vertical_line = D << pg.rectangle(size=size, layer=0)
+        vertical_line.move((x_offset, y_offset))
+
+    # Create vertical lines for the middle set
+    for x_offset in x_offsets_2:
+        vertical_line = D << pg.rectangle(size=size, layer=0)
+        vertical_line.move((x_offset, y_offset))
+
+    # Create vertical lines for the last set
+    for x_offset in x_offsets_3:
+        vertical_line = D << pg.rectangle(size=size, layer=0)
+        vertical_line.move((x_offset, y_offset))
+
+    #----------------------------------------------------------------------------------------------------------------------
+    # 2nd set of combs starts here;
+    #----------------------------------------------------------------------------------------------------------------------
+    # Define parameters
+    num_columns = 5
+    column_spacing = 10
+    start_x = [57, 200, 62, 205]
+    start_y = [90, 90, 88, 87]
+
+    # Adjust comb width and height for the 2nd to 9th devices
+    comb_width += 1
+    comb_height += 1
+
+    # Function to create columns
+    def create_columns(start_x, start_y):
+        for i in range(num_columns):
+            x_position = start_x + i * column_spacing
+            vertical_line = D << pg.rectangle(size=(comb_width, comb_height), layer=0)
+            vertical_line.move((x_position, start_y))
+
+    # Create columns for each section
+    for x, y in zip(start_x, start_y):
+        create_columns(x, y)
+
+    #----------------------------------------------------------------------------------------------------------------------
+    # 2nd set of combs ends here;
+    #----------------------------------------------------------------------------------------------------------------------
+
+    #----------------------------------------------------------------------------------------------------------------------
+    # 3nd set of combs starts here;
+    #----------------------------------------------------------------------------------------------------------------------
+    # Define parameters
+    start_x = [57, 200, 62, 205]
+    start_y = [40, 40, 38, 37]
+    num_columns = [5, 5, 5, 5]
+    column_spacing = 10
+
+    # Function to create columns
+    def create_columns(start_x, start_y, num_columns):
+        for i in range(num_columns):
+            x_position = start_x + i * column_spacing
+            vertical_line = D << pg.rectangle(size=(comb_width, comb_height), layer=0)
+            vertical_line.move((x_position, start_y))
+
+    # Create columns for each section
+    for x, y, num in zip(start_x, start_y, num_columns):
+        create_columns(x, y, num)
+    #----------------------------------------------------------------------------------------------------------------------
+    # 3nd set of combs ends here;
+    #----------------------------------------------------------------------------------------------------------------------
+
+    return D
+
+# Create a new device for multiple patterns
+B = Device()
+
+# Define number of patterns and spacing between them
+num_patterns = 9
+
+spacing_between_patterns_x = 150
+spacing_between_patterns_y = 300
+
+# Create the patterns
+for i in range(num_patterns):
+    # Adjust comb width for each pattern
+    comb_width_factor = 1 - 0.1 * i
+    pattern = create_device_D(comb_width_factor)
+    B << pattern
+
+# Define spacing between patterns
+spacing_x = B.xsize + spacing_between_patterns_x
+spacing_y = B.ysize + spacing_between_patterns_y
+
+# Arrange patterns in rows and columns
+rows = 3
+columns = 3
+
+for i in range(rows):
+    for j in range(columns):
+        for k in range(3):
+            pattern_index = i * columns * 3 + j * 3 + k
+            if pattern_index < num_patterns:
+                pattern_ref = B.references[pattern_index]
+                pattern_ref.move((j * spacing_x, -i * spacing_y - k * spacing_between_patterns_y))
+
+# Quickplot the geometry
+#qp(B)
+#Making for mask 2 for device 1
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((-20,-20))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((320,-20))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((-20,-20))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((-20,220))
+
+# Making for Mask 3 for device 1
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((-30,-30))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((330,-30))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((-30,-30))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((-30,230))
+
+#Making for mask 2 for device 2
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((440,-20))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((780,-20))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((440,-20))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((440,220))
+
+# Making for Mask 3 for device 2
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((430,-30))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((790,-30))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((430,-30))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((430,230))
+
+#Making for mask 2 for device 3
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((880,-20))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((1220,-20))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((880,-20))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((880,220))
+
+# Making for Mask 3 for device 3
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((870,-30))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((1230,-30))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((870,-30))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((870,230))
+
+#-------end of first 3 masks
+
+#------- start of next 3 devices
+#Making for mask 2 for device 4
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((-20,-320))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((320,-320))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((-20,-320))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((-20,-80))
+
+# Making for Mask 3 for device 4
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((-30,-330))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((330,-330))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((-30,-330))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((-30,-70))
+
+#Making for mask 2 for device 5
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((440,-310))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((780,-310))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((440,-310))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((440,-70))
+
+# Making for Mask 3 for device 5
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((430,-320))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((790,-320))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((430,-320))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((430,-60))
+
+#Making for mask 2 for device 6
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((880,-310))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((1220,-310))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((880,-310))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((880,-70))
+
+# Making for Mask 3 for device 6
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((870,-320))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((1230,-320))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((870,-320))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((870,-60))
+
+#------- end of next 3 devices 2nd or middle part
+
+#------- start of next 3 devices or the last layer 
+#Making for mask 2 for device 4
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((-20,-620))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((320,-620))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((-20,-620))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((-20,-380))
+
+# Making for Mask 3 for device 4
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((-30,-630))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((330,-630))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((-30,-630))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((-30,-370))
+
+#Making for mask 2 for device 5
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((440,-620))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((780,-620))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((440,-620))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((440,-380))
+
+# Making for Mask 3 for device 5
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((430,-630))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((790,-630))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((430,-630))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((430,-370))
+
+#Making for mask 2 for device 6
+masks = Device()
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((880,-620))
+vertical_line = B << pg.rectangle(size=(5,240), layer=2)
+vertical_line.move((1220,-620))
+Horizontal_line0 = B << pg.rectangle(size=(340,5), layer=2)
+Horizontal_line0.move((880,-620))
+Horizontal_line0 = B << pg.rectangle(size=(345,5), layer=2)
+Horizontal_line0.move((880,-380))
+
+# Making for Mask 3 for device 6
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((870,-630))
+vertical_line = B << pg.rectangle(size=(5,260), layer=4)
+vertical_line.move((1230,-630))
+Horizontal_line0 = B << pg.rectangle(size=(360,5), layer=4)
+Horizontal_line0.move((870,-630))
+Horizontal_line0 = B << pg.rectangle(size=(365,5), layer=4)
+Horizontal_line0.move((870,-370))
+
+#------- end of next 3 devices 2nd or last layer
+
+# test
+# quickplot the geometry
+
+litho=B << pg.litho_steps(
+        line_widths = [1,2,4,8,16],
+        line_spacing = 10,
+        height = 100,
+        layer = 5
+        )
+litho.move((1350,-500))
+
+a = B << pg.litho_calipers(
+        notch_size = [10,25],
+        notch_spacing = 5,
+        num_notches = 7,
+        offset_per_notch = 1,
+        row_spacing = 0,
+        layer1 = 6,
+        layer2 = 7)
+a.move((1300,-350))
+
+
+
+
+
+B << masks
+
+qp(B)
+D1=Device('test')
+D1<<pg.union(B, by_layer = True)
+qp(D1)
+D1.write_gds('Micro_nano_F2.gds')
+
